@@ -1,7 +1,2 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+// see https://github.com/systemd/systemd/tree/master/src/libsystemd/sd-device
+mod device;
