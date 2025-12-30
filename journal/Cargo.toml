@@ -1,0 +1,9 @@
+[package]
+name = "journal"
+version = "0.1.0"
+authors = ["nexos <nexoscp@users.noreply.github.com>"]
+edition = "2024"
+
+[dependencies]
+log = { version = "0.4.29", features = ["std", "kv"] }
+bytebuffer = "2.3.0"
