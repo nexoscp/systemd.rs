@@ -4,11 +4,12 @@ mod keyvalue;
 use bytebuffer::ByteBuffer;
 use env::current_exe;
 use keyvalue::KVBuffer;
-use log::{LevelFilter, Log, Metadata, Record};
+use log::{LevelFilter, Log, Metadata, Record, SetLoggerError};
 use std::fmt::Debug;
 use std::net::Shutdown;
 use std::os::unix::net::UnixDatagram;
 use std::{env, io};
+use std::io::Error;
 use sysloglevel::SysLogLevel;
 
 
@@ -22,21 +23,17 @@ pub struct Journal {
     socket: UnixDatagram,
 }
 
-#[derive(Debug)]
-pub enum JournalError {
-    Io(io::Error),
-    SetLoggerError(log::SetLoggerError)
-}
-
 impl Journal {
     pub fn init(level: LevelFilter) -> Result<(), JournalError> {
-        log::set_boxed_logger(Box::new(Journal::open().map_err(|e| JournalError::Io(e))?))
-            .map(|()| log::set_max_level(level)).map_err(|e| JournalError::SetLoggerError(e))
+        log::set_boxed_logger(Box::new(Journal::open()?))
+            .map(|()| log::set_max_level(level))?;
+        Ok(())
     }
 
     pub fn init_tag(level: LevelFilter, tag: &str) -> Result<(), JournalError> {
-        log::set_boxed_logger(Box::new(Journal::open_tag(tag).map_err(|e| JournalError::Io(e))?))
-            .map(|()| log::set_max_level(level)).map_err(|e| JournalError::SetLoggerError(e))
+        log::set_boxed_logger(Box::new(Journal::open_tag(tag)?))
+            .map(|()| log::set_max_level(level))?;
+        Ok(())
     }
 
     //open socket with AF_UNIX, SOCK_DGRAM|SOCK_CLOEXEC "/run/systemd/journal/socket"
@@ -117,4 +114,22 @@ fn write(buffer: &mut ByteBuffer, key:&[u8], value: &[u8]) {
     buffer.write_bytes(b"=");
     buffer.write_bytes(value);
     buffer.write_bytes(b"\n");
+}
+
+#[derive(Debug)]
+pub enum JournalError {
+    Io(io::Error),
+    SetLoggerError(log::SetLoggerError)
+}
+
+impl From<io::Error> for JournalError {
+    fn from(e: Error) -> Self {
+        JournalError::Io(e)
+    }
+}
+
+impl From<SetLoggerError> for JournalError {
+    fn from(e: SetLoggerError) -> Self {
+        JournalError::SetLoggerError(e)
+    }
 }
