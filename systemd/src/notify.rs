@@ -13,10 +13,10 @@ pub enum NotifyError {
 }
 
 impl NotifyError {
-    fn new(&self) -> Result<NotifySocket, NotifyError> {
+    pub fn new(&self) -> Result<NotifySocket, NotifyError> {
         match env::var("NOTIFY_SOCKET") { //Default is /run/systemd/journal/socket
-            Ok(socketName) => {
-                match UnixDatagram::bind(socketName) {
+            Ok(socket_name) => {
+                match UnixDatagram::bind(socket_name) {
                     Ok(socket) => Ok(NotifySocket { socket }),
                     Err(error) => Err(NotifyError::Socket(error))
                 }

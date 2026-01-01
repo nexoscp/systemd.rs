@@ -5,11 +5,11 @@ use bytebuffer::ByteBuffer;
 use env::current_exe;
 use keyvalue::KVBuffer;
 use log::{LevelFilter, Log, Metadata, Record, SetLoggerError};
-use std::fmt::Debug;
+use std::fmt::{Debug, Display, Formatter};
+use std::io::Error;
 use std::net::Shutdown;
 use std::os::unix::net::UnixDatagram;
 use std::{env, io};
-use std::io::Error;
 use sysloglevel::SysLogLevel;
 
 
@@ -58,7 +58,7 @@ impl Journal {
 
 impl Drop for Journal {
     fn drop(&mut self) {
-        self.socket.shutdown(Shutdown::Both);
+        self.socket.shutdown(Shutdown::Both).expect("shutdown call failed");
     }
 }
 
@@ -101,9 +101,9 @@ impl Log for Journal {
         write(&mut buffer, b"RUST_TARGET", record.target().as_bytes());
 
         //TODO only when feature kv is active
-         record.key_values().visit(&mut KVBuffer::new(&mut buffer));
+         record.key_values().visit(&mut KVBuffer::new(&mut buffer)).expect("Adding key-value-pairs");
 
-         self.socket.send(buffer.as_bytes());
+         self.socket.send(buffer.as_bytes()).expect("Sending log record");
     }
 
     fn flush(&self) {}
@@ -122,6 +122,16 @@ pub enum JournalError {
     SetLoggerError(log::SetLoggerError)
 }
 
+impl std::error::Error for JournalError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(self)
+    }
+}
+impl Display for JournalError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(&self, f)
+    }
+}
 impl From<io::Error> for JournalError {
     fn from(e: Error) -> Self {
         JournalError::Io(e)

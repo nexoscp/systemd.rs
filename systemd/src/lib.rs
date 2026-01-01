@@ -25,7 +25,6 @@ pub mod hotplug;
 pub mod booted;
 pub mod daemon;
 pub mod osrelease;
-pub mod machine;
 pub mod id128;
 pub mod watchdog;
 pub mod login;

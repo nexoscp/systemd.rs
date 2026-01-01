@@ -1,5 +1,8 @@
 [package]
-name = "systemd"
+name = "machine"
 version = "0.1.0"
 authors = ["nexos <nexoscp@users.noreply.github.com>"]
 edition = "2024"
+
+[dependencies]
+systemd = { path = "../systemd" }
